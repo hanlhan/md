@@ -1,38 +1,20 @@
-const path = require('path');
-
-const webpack = require('webpack')
-const CompressionWebpackPlugin = require('compression-webpack-plugin')
-const productionGzipExtensions = ['js', 'css']
-const isProduction = process.env.NODE_ENV === 'production'
-
+const isProd = process.env.NODE_ENV === `production`
 
 module.exports = {
-    outputDir: "dist",
-    publicPath: "/",
-    productionSourceMap: false,
-    configureWebpack:{
-        resolve:{
-        alias:{
-            '@':path.resolve(__dirname, './src'),
-            '@i':path.resolve(__dirname, './src/assets'),
-        } 
+  lintOnSave: true,
+  publicPath: process.env.SERVER_ENV === `NETLIFY` ? `/` : `/md/`, // 基本路径, 建议以绝对路径跟随访问目录
+  configureWebpack: (config) => {
+    config.module.rules.push({
+      test: /\.(txt|md)$/i,
+      use: [
+        {
+          loader: `raw-loader`,
         },
-        plugins: [
-        // Ignore all locale files of moment.js
-        new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
-        
-        // 配置compression-webpack-plugin压缩
-        new CompressionWebpackPlugin({
-            algorithm: 'gzip',
-            test: new RegExp('\\.(' + productionGzipExtensions.join('|') + ')$'),
-            threshold: 10240,
-            minRatio: 0.8
-        }),
-        new webpack.optimize.LimitChunkCountPlugin({
-            maxChunks: 5, 
-            minChunkSize: 100
-        })
-        ]
-
-    },
-};
+      ],
+    })
+  },
+  productionSourceMap: !isProd,
+  css: {
+    sourceMap: !isProd,
+  },
+}
