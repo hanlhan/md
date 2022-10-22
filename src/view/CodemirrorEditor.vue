@@ -11,69 +11,84 @@
                     @showAboutDialog="aboutDialogVisible = true"
                     @showDialogForm="dialogFormVisible = true"
                     @showDialogUploadImg="dialogUploadImgVisible = true"
+                    @showloginform="dialogLoginVisible = true"
                     @startCopy="(isCoping = true), (backLight = true)"
                     @endCopy="endCopy"
                 />
             </el-header>
-            <el-main class="main-body">
-                <el-row class="main-section">
-                    <el-col
-                        :span="12"
-                        @contextmenu.prevent.native="openMenu($event)"
-                    >
-                        <textarea
-                            id="editor"
-                            type="textarea"
-                            placeholder="Your markdown text here."
-                            v-model="source"
+            <el-container>
+                <el-aside class="aside-body">
+                    <el-button class="new_article">添加新文章</el-button>
+                    <el-card class="box-card">
+                    <div v-for="o in articlelist" :key="o.id" class="text item">
+                        <el-link @click="setArticleContent(o.id)" target="_blank">{{o.title }}</el-link>
+                    </div>
+                    </el-card>
+                </el-aside>
+                <el-main class="main-body">
+                    <el-row class="main-section">
+                        <el-col
+                            :span="12"
+                            @contextmenu.prevent.native="openMenu($event)"
                         >
-                        </textarea>
-                    </el-col>
-                    <el-col
-                        :span="12"
-                        class="preview-wrapper"
-                        id="preview"
-                        ref="preview"
-                        :class="{
-                            'preview-wrapper_night': nightMode && isCoping,
-                        }"
-                    >
-                        <section
-                            id="output-wrapper"
-                            :class="{ output_night: nightMode && !backLight }"
-                        >
-                            <div class="preview">
-                                <section id="output" v-html="output"></section>
-                                <div
-                                    class="loading-mask"
-                                    v-if="nightMode && isCoping"
-                                >
-                                    <div class="loading__img"></div>
-                                    <span>正在生成</span>
-                                </div>
-                            </div>
-                        </section>
-                    </el-col>
-                    <transition
-                        name="custom-classes-transition"
-                        enter-active-class="bounceInRight"
-                    >
-                        <el-col id="cssBox" :span="12" v-show="showCssEditor">
                             <textarea
-                                id="cssEditor"
+                                id="editor"
                                 type="textarea"
-                                placeholder="Your custom css here."
+                                placeholder="Your markdown text here."
+                                v-model="source"
                             >
                             </textarea>
                         </el-col>
-                    </transition>
-                </el-row>
-            </el-main>
+                        <el-col
+                            :span="12"
+                            class="preview-wrapper"
+                            id="preview"
+                            ref="preview"
+                            :class="{
+                                'preview-wrapper_night': nightMode && isCoping,
+                            }"
+                        >
+                            <section
+                                id="output-wrapper"
+                                :class="{ output_night: nightMode && !backLight }"
+                            >
+                                <div class="preview">
+                                    <section id="output" v-html="output"></section>
+                                    <div
+                                        class="loading-mask"
+                                        v-if="nightMode && isCoping"
+                                    >
+                                        <div class="loading__img"></div>
+                                        <span>正在生成</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </el-col>
+                        <transition
+                            name="custom-classes-transition"
+                            enter-active-class="bounceInRight"
+                        >
+                            <el-col id="cssBox" :span="12" v-show="showCssEditor">
+                                <textarea
+                                    id="cssEditor"
+                                    type="textarea"
+                                    placeholder="Your custom css here."
+                                >
+                                </textarea>
+                            </el-col>
+                        </transition>
+                    </el-row>
+                </el-main>
+            </el-container>
         </el-container>
         <upload-img-dialog
             v-model="dialogUploadImgVisible"
             @close="dialogUploadImgVisible = false"
             @uploaded="uploaded"
+        />
+        <login-form-dialog
+            v-model="dialogLoginVisible"
+            @closelogin="dialogLoginVisible = false"
         />
         <about-dialog v-model="aboutDialogVisible" />
         <insert-form-dialog v-model="dialogFormVisible" />
@@ -90,6 +105,7 @@
 import editorHeader from "../components/CodemirrorEditor/header";
 import aboutDialog from "../components/CodemirrorEditor/aboutDialog";
 import insertFormDialog from "../components/CodemirrorEditor/insertForm";
+import loginFormDialog from "../components/CodemirrorEditor/loginForm";
 import rightClickMenu from "../components/CodemirrorEditor/rightClickMenu";
 import uploadImgDialog from "../components/CodemirrorEditor/uploadImgDialog";
 
@@ -101,6 +117,7 @@ import {
     customCssWithTemplate,
 } from "../assets/scripts/util";
 import { uploadImgFile } from "../assets/scripts/uploadImageFile";
+import { getArticleList } from "../assets/scripts/getArticle";
 
 require("codemirror/mode/javascript/javascript");
 import { mapState, mapMutations } from "vuex";
@@ -110,6 +127,7 @@ export default {
             showCssEditor: false,
             aboutDialogVisible: false,
             dialogUploadImgVisible: false,
+            dialogLoginVisible: false,
             dialogFormVisible: false,
             isCoping: false,
             isImgLoading: false,
@@ -119,6 +137,7 @@ export default {
             source: "",
             mouseLeft: 0,
             mouseTop: 0,
+            articlelist: [],
         };
     },
     components: {
@@ -127,6 +146,7 @@ export default {
         insertFormDialog,
         rightClickMenu,
         uploadImgDialog,
+        loginFormDialog,
     },
     computed: {
         ...mapState({
@@ -144,11 +164,31 @@ export default {
         this.initEditorState();
         this.$nextTick(() => {
             this.initEditor();
+            this.getArticleList();
             this.initCssEditor();
             this.onEditorRefresh();
         });
     },
     methods: {
+        getArticleList() {
+            getArticleList("1234").then((res) => {
+                console.log(res);
+                this.articlelist = res;
+            });
+        },
+        setArticleContent(id) {
+            let article = null;
+            for(article of this.articlelist) {
+                console.log(article);
+                if(article.id == id){
+                    this.editor.setValue(article.content);
+                    this.onEditorRefresh();
+                    return;
+                }
+            }
+            this.editor.setValue("未找到文章");
+            this.onEditorRefresh();
+        },
         initEditor() {
             this.initEditorEntity();
             this.editor.on("change", (cm, e) => {

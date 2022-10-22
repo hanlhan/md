@@ -1,5 +1,19 @@
 <template>
     <el-container class="top is-dark">
+        <div class="tooltip">
+        <!-- 登录 -->
+        <el-tooltip
+            :effect="effect"
+            content="登录"
+            placement="bottom-start"
+        >
+            <i
+                class="el-icon-user tooltip"
+                size="medium"
+                @click="$emit('showloginform')"
+            ></i>
+        </el-tooltip>
+        <!-- 下载文本文档 -->
         <!-- 图片上传 -->
         <el-tooltip
             :effect="effect"
@@ -7,7 +21,7 @@
             placement="bottom-start"
         >
             <i
-                class="el-icon-upload"
+                class="el-icon-upload tooltip"
                 size="medium"
                 @click="$emit('showDialogUploadImg')"
             ></i>
@@ -20,7 +34,7 @@
             placement="bottom-start"
         >
             <i
-                class="el-icon-download"
+                class="el-icon-download tooltip"
                 size="medium"
                 @click="$emit('downLoad')"
             ></i>
@@ -33,7 +47,7 @@
             placement="bottom-start"
         >
             <i
-                class="el-icon-refresh"
+                class="el-icon-refresh tooltip"
                 size="medium"
                 @click="showResetConfirm = true"
             ></i>
@@ -51,6 +65,7 @@
                 @click="$emit('showDialogForm')"
             ></i>
         </el-tooltip>
+        </div>
         <el-form size="mini" class="ctrl" :inline="true">
             <el-form-item>
                 <el-select
@@ -387,5 +402,9 @@ export default {
 }
 .top {
     margin-right: 0;
+}
+.tooltip {
+    margin:0 5px;
+    font-size: 20px;
 }
 </style>
